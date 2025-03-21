@@ -3,6 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Clés - Collectivité</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="index.html" class="navbar-logo">
+                <i class="fas fa-key"></i> Gestion des Clés
+            </a>
+            <ul class="navbar-menu">
+                <li class="navbar-item">
+                    <a href="index.html" class="navbar-link active">Accueil</a>
+                </li>
+                <li class="navbar-item">
+                    <a href="cles.html" class="navbar-link">Clés</a>
+                </li>
+                <li class="navbar-item">
+                    <a href="armoires.html" class="navbar-link">Armoires</a>
+                </li>
+                <li class="navbar-item">
+                    <a href="prets.html" class="navbar-link">Prêts</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Contenu principal -->
+    <div class="container">
+        <h1 style="margin: 20px 0;">Tableau de bord</h1>
+        
+        <div class="grid">
+            <!-- Carte Clés -->
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-key"></i> Gestion des Clés</h2>
+                <div class="card-content">
+                    <p>Gérez l'inventaire complet des clés de votre collectivité.</p>
+                </div>
+                <a href="cles.html" class="btn btn-primary">Accéder</a>
+            </div>
+            
+            <!-- Carte Armoires -->
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-door-closed"></i> Gestion des Armoires</h2>
+                <div class="card-content">
+                    <p>Suivez les clés placées dans différentes armoires.</p>
+                </div>
+                <a href="armoires.html" class="btn btn-primary">Accéder</a>
+            </div>
+            
+            <!-- Carte Prêts -->
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-exchange-alt"></i> Gestion des Prêts</h2>
+                <div class="card-content">
+                    <p>Enregistrez et suivez les prêts de clés.</p>
+                </div>
+                <a href="prets.html" class="btn btn-primary">Accéder</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pied de page -->
+    <footer style="text-align: center; margin-top: 40px; padding: 20px; background-color: #f8f9fa; border-top: 1px solid #ddd;">
+        <p>Application de Gestion des Clés pour Collectivité &copy; 2025</p>
+    </footer>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des Clés - Test</title>
     <style>
         body {
