@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Clés - Collectivité</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="index.html" class="navbar-logo">
+                <i class="fas fa-key"></i> Gestion des Clés
+            </a>
+            <ul class="navbar-menu">
+                <li class="navbar-item"><a href="index.html" class="navbar-link">Accueil</a></li>
+                <li class="navbar-item"><a href="cles.html" class="navbar-link active">Clés</a></li>
+                <li class="navbar-item"><a href="armoires.html" class="navbar-link">Armoires</a></li>
+                <li class="navbar-item"><a href="prets.html" class="navbar-link">Prêts</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <h1>Gestion des Clés</h1>
+
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 class="card-title">Liste des Clés</h2>
+                <div>
+                    <a href="import-cles-real.html" class="btn btn-primary">
+                        <i class="fas fa-file-import"></i> Importer depuis Excel
+                    </a>
+                    <button id="refresh-btn" class="btn btn-primary">
+                        <i class="fas fa-sync-alt"></i> Actualiser
+                    </button>
+                </div>
+            </div>
+            <div class="card-content">
+                <div class="form-group">
+                    <input type="text" id="search-input" class="form-control" placeholder="Rechercher...">
+                </div>
+                <div id="loading-indicator" style="text-align: center; padding: 20px; display: none;">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p>Chargement des données...</p>
+                </div>
+                <div id="error-message" class="alert alert-danger" style="display: none;"></div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nom</th>
+                            <th>Quantité</th>
+                            <th>Description</th>
+                            <th>Date de création</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="keys-table-body">
+                        <!-- Les données des clés seront chargées ici dynamiquement -->
+                    </tbody>
+                </table>
+                <div id="no-data-message" style="text-align: center; padding: 20px; display: none;">
+                    <p>Aucune clé trouvée. Importez des données depuis Excel pour commencer.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">Ajouter une Clé</h2>
+            <div class="card-content">
+                <form id="add-key-form">
+                    <div class="form-group">
+                        <label for="key-name">Nom de la Clé</label>
+                        <input type="text" id="key-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="key-quantity">Quantité</label>
+                        <input type="number" id="key-quantity" class="form-control" min="1" value="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="key-description">Description</label>
+                        <textarea id="key-description" class="form-control" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                </form>
+                <div id="form-message" style="margin-top: 15px; display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>Application de Gestion des Clés pour Collectivité © 2025</p>
+    </footer>
+
+    <script>
+        // Configuration de l'API
+        const API_BASE_URL = 'https://gestion-cles-api.your-worker.workers.dev'; // Remplacez par l'URL réelle de votre Worker
+        
+        // DOM Elements
+        const keysTableBody = document.getElementById('keys-table-body');
+        const searchInput = document.getElementById('search-input');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const errorMessage = document.getElementById('error-message');
+        const noDataMessage = document.getElementById('no-data-message');
+        const addKeyForm = document.getElementById('add-key-form');
+        const formMessage = document.getElementById('form-message');
+        
+        // Fonction pour afficher un message
+        function showMessage(element, message, type = 'success') {
+            element.innerHTML = message;
+            element.className = `alert alert-${type}`;
+            element.style.display = 'block';
+            
+            // Masquer le message après 5 secondes
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Fonction pour formater une date
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            
+            const date = new Date(dateString);
+            return date.toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        // Fonction pour charger les clés depuis l'API
+        async function loadKeys() {
+            try {
+                // Afficher l'indicateur de chargement
+                loadingIndicator.style.display = 'block';
+                keysTableBody.innerHTML = '';
+                errorMessage.style.display = 'none';
+                noDataMessage.style.display = 'none';
+                
+                // Appeler l'API
+                const response = await fetch(`${API_BASE_URL}/api/keys`);
+                
+                if (!response.ok) {
+                    throw new Error(`Erreur lors du chargement des clés: ${response.status} ${response.statusText}`);
+                }
+                
+                const keys = await response.json();
+                
+                // Masquer l'indicateur de chargement
+                loadingIndicator.style.display = 'none';
+                
+                // Vérifier s'il y a des données
+                if (keys.length === 0) {
+                    noDataMessage.style.display = 'block';
+                    return;
+                }
+                
+                // Afficher les clés
+                keys.forEach(key => {
+                    const row = document.createElement('tr');
+                    
+                    row.innerHTML = `
+                        <td>${key.key_id}</td>
+                        <td>${key.key_name}</td>
+                        <td>${key.quantity}</td>
+                        <td>${key.description || ''}</td>
+                        <td>${formatDate(key.created_at)}</td>
+                        <td>
+                            <button class="btn btn-primary btn-sm edit-btn" data-id="${key.key_id}">Éditer</button>
+                            <button class="btn btn-danger btn-sm delete-btn" data-id="${key.key_id}">Supprimer</button>
+                        </td>
+                    `;
+                    
+                    keysTableBody.appendChild(row);
+                });
+                
+                // Ajouter les événements pour les boutons d'édition et de suppression
+                addButtonEventListeners();
+                
+            } catch (error) {
+                console.error('Erreur lors du chargement des clés:', error);
+                loadingIndicator.style.display = 'none';
+                errorMessage.textContent = `Erreur: ${error.message}`;
+                errorMessage.style.display = 'block';
+                
+                // Si l'erreur est due à l'absence de connexion à l'API, afficher un message spécifique
+                if (error.message.includes('Failed to fetch')) {
+                    errorMessage.innerHTML = `
+                        <p>Impossible de se connecter à l'API. Veuillez vérifier que:</p>
+                        <ul>
+                            <li>Le Cloudflare Worker est correctement déployé</li>
+                            <li>L'URL de l'API est correcte (${API_BASE_URL})</li>
+                            <li>La base de données D1 est créée et configurée</li>
+                        </ul>
+                    `;
+                }
+            }
+        }
+        
+        // Fonction pour ajouter les événements aux boutons d'édition et de suppression
+        function addButtonEventListeners() {
+            // Boutons d'édition
+            document.querySelectorAll('.edit-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const keyId = this.getAttribute('data-id');
+                    editKey(keyId);
+                });
+            });
+            
+            // Boutons de suppression
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const keyId = this.getAttribute('data-id');
+                    deleteKey(keyId);
+                });
+            });
+        }
+        
+        // Fonction pour éditer une clé
+        async function editKey(keyId) {
+            try {
+                // Récupérer les détails de la clé
+                const response = await fetch(`${API_BASE_URL}/api/keys/${keyId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Erreur lors de la récupération des détails de la clé: ${response.status} ${response.statusText}`);
+                }
+                
+                const key = await response.json();
+                
+                // Remplir le formulaire avec les détails de la clé
+                document.getElementById('key-name').value = key.key_name;
+                document.getElementById('key-quantity').value = key.quantity;
+                document.getElementById('key-description').value = key.description || '';
+                
+                // Modifier le formulaire pour la mise à jour
+                const submitButton = addKeyForm.querySelector('button[type="submit"]');
+                submitButton.textContent = 'Mettre à jour';
+                submitButton.setAttribute('data-id', keyId);
+                submitButton.setAttribute('data-action', 'update');
+                
+                // Faire défiler jusqu'au formulaire
+                addKeyForm.scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                console.error('Erreur lors de l\'édition de la clé:', error);
+                showMessage(formMessage, `Erreur: ${error.message}`, 'danger');
+            }
+        }
+        
+        // Fonction pour supprimer une clé
+        async function deleteKey(keyId) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer cette clé ?')) {
+                return;
+            }
+            
+            try {
+                // Appeler l'API pour supprimer la clé
+                const response = await fetch(`${API_BASE_URL}/api/keys/${keyId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Erreur lors de la suppression de la clé: ${response.status} ${response.statusText}`);
+                }
+                
+                // Recharger les clés
+                loadKeys();
+                
+                // Afficher un message de succès
+                showMessage(formMessage, 'Clé supprimée avec succès.', 'success');
+                
+            } catch (error) {
+                console.error('Erreur lors de la suppression de la clé:', error);
+                showMessage(formMessage, `Erreur: ${error.message}`, 'danger');
+            }
+        }
+        
+        // Événement de soumission du formulaire
+        addKeyForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            const keyName = document.getElementById('key-name').value;
+            const keyQuantity = document.getElementById('key-quantity').value;
+            const keyDescription = document.getElementById('key-description').value;
+            
+            const submitButton = addKeyForm.querySelector('button[type="submit"]');
+            const isUpdate = submitButton.getAttribute('data-action') === 'update';
+            const keyId = isUpdate ? submitButton.getAttribute('data-id') : null;
+            
+            try {
+                let url = `${API_BASE_URL}/api/keys`;
+                let method = 'POST';
+                
+                if (isUpdate) {
+                    url = `${API_BASE_URL}/api/keys/${keyId}`;
+                    method = 'PUT';
+                }
+                
+                // Appeler l'API pour ajouter ou mettre à jour la clé
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        key_name: keyName,
+                        quantity: parseInt(keyQuantity),
+                        description: keyDescription
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Erreur lors de l'${isUpdate ? 'mise à jour' : 'ajout'} de la clé: ${response.status} ${response.statusText}`);
+                }
+                
+                // Réinitialiser le formulaire
+                addKeyForm.reset();
+                submitButton.textContent = 'Ajouter';
+                submitButton.removeAttribute('data-id');
+                submitButton.removeAttribute('data-action');
+                
+                // Recharger les clés
+                loadKeys();
+                
+                // Afficher un message de succès
+                showMessage(formMessage, `Clé ${isUpdate ? 'mise à jour' : 'ajoutée'} avec succès.`, 'success');
+                
+            } catch (error) {
+                console.error(`Erreur lors de l'${isUpdate ? 'mise à jour' : 'ajout'} de la clé:`, error);
+                showMessage(formMessage, `Erreur: ${error.message}`, 'danger');
+            }
+        });
+        
+        // Événement de recherche
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            // Filtrer les lignes du tableau
+            const rows = keysTableBody.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                const keyName = row.cells[1].textContent.toLowerCase();
+                const keyDescription = row.cells[3].textContent.toLowerCase();
+                
+                if (keyName.includes(searchTerm) || keyDescription.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+        
+        // Événement de clic sur le bouton d'actualisation
+        refreshBtn.addEventListener('click', loadKeys);
+        
+        // Charger les clés au chargement de la page
+        document.addEventListener('DOMContentLoaded', loadKeys);
+    </script>
+</body>
+</html>
