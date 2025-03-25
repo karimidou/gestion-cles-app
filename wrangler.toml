@@ -1,0 +1,8 @@
+name = "gestion-cles-api"
+main = "worker.js"
+compatibility_date = "2023-12-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "gestion_cles_db"
+database_id = "1d90d260-221a-41f3-95de-7a9f49e99a31"
